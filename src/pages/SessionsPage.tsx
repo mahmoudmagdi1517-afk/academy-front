@@ -764,7 +764,7 @@ export const SessionsPage: React.FC = () => {
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <button
                         type="button"
-                        disabled={isTeacher && (Boolean(currentAtt) || attendanceSession?.status === "completed" || teacherAttendanceExpired)}
+                        disabled={isTeacher && (attendanceSession?.status === "cancelled" || teacherAttendanceExpired)}
                         onClick={() =>
                           setStudentAttendanceStatus(student._id, "present")
                         }
@@ -780,7 +780,7 @@ export const SessionsPage: React.FC = () => {
 
                       <button
                         type="button"
-                        disabled={isTeacher && (Boolean(currentAtt) || attendanceSession?.status === "completed" || teacherAttendanceExpired)}
+                        disabled={isTeacher && (attendanceSession?.status === "cancelled" || teacherAttendanceExpired)}
                         onClick={() =>
                           setStudentAttendanceStatus(student._id, "absent")
                         }
@@ -796,7 +796,7 @@ export const SessionsPage: React.FC = () => {
 
                       <button
                         type="button"
-                        disabled={isTeacher && (Boolean(currentAtt) || attendanceSession?.status === "completed" || teacherAttendanceExpired)}
+                        disabled={isTeacher && (attendanceSession?.status === "cancelled" || teacherAttendanceExpired)}
                         onClick={() =>
                           setStudentAttendanceStatus(student._id, "late")
                         }
@@ -812,7 +812,7 @@ export const SessionsPage: React.FC = () => {
 
                       <button
                         type="button"
-                        disabled={isTeacher && (Boolean(currentAtt) || attendanceSession?.status === "completed" || teacherAttendanceExpired)}
+                        disabled={isTeacher && (attendanceSession?.status === "cancelled" || teacherAttendanceExpired)}
                         onClick={() =>
                           setStudentAttendanceStatus(student._id, "excused")
                         }
@@ -837,8 +837,6 @@ export const SessionsPage: React.FC = () => {
               {teacherAttendanceExpired
                 ? t('session.attendanceExpired')
                 : t('session.attendanceWindow')}
-              {' '}
-              {t('session.managerEditOnly')}
             </p>
           )}
 
