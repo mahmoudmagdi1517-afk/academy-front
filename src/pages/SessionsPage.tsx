@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   CalendarDays,
   Plus,
@@ -42,6 +43,8 @@ export const SessionsPage: React.FC = () => {
   const { success, error } = useToast();
   const { hasRole } = useAuth();
   const isTeacher = hasRole('teacher');
+  const canManageAttendance = hasRole('owner', 'manager');
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [sessions, setSessions] = useState<Session[]>([]);
   const [groups, setGroups] = useState<Array<Pick<Group, '_id' | 'name' | 'nameAr'>>>([]);
@@ -87,6 +90,11 @@ export const SessionsPage: React.FC = () => {
     Record<string, { status: AttendanceStatus; note: string }>
   >({});
   const [loadingAttendance, setLoadingAttendance] = useState(false);
+  const teacherAttendanceExpired =
+    isTeacher &&
+    attendanceSession?.scheduledEndAt != null &&
+    Date.now() >
+      new Date(attendanceSession.scheduledEndAt).getTime() + 24 * 60 * 60 * 1000;
 
   const loadData = async () => {
     setLoading(true);
@@ -200,7 +208,7 @@ export const SessionsPage: React.FC = () => {
     }
   };
 
-  const openAttendance = async (session: Session) => {
+  const openAttendance = useCallback(async (session: Session) => {
     setAttendanceSession(session);
     setLoadingAttendance(true);
     try {
@@ -219,7 +227,25 @@ export const SessionsPage: React.FC = () => {
     } finally {
       setLoadingAttendance(false);
     }
-  };
+  }, [error]);
+
+  useEffect(() => {
+    const requestedSessionId = searchParams.get('sessionId');
+    if (!requestedSessionId || loading) return;
+
+    const requestedSession = sessions.find((session) => session._id === requestedSessionId);
+    if (requestedSession) {
+      void openAttendance(requestedSession);
+    } else {
+      error('The requested session is not in the current session list');
+    }
+
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete('sessionId');
+      return next;
+    }, { replace: true });
+  }, [error, loading, openAttendance, searchParams, sessions, setSearchParams]);
 
   const setStudentAttendanceStatus = async (
     studentId: string,
@@ -738,10 +764,11 @@ export const SessionsPage: React.FC = () => {
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <button
                         type="button"
+                        disabled={isTeacher && (Boolean(currentAtt) || attendanceSession?.status === "completed" || teacherAttendanceExpired)}
                         onClick={() =>
                           setStudentAttendanceStatus(student._id, "present")
                         }
-                        className={`px-3 py-1 rounded-xl font-bold flex items-center gap-1 transition ${
+                        className={`px-3 py-1 rounded-xl font-bold flex items-center gap-1 transition disabled:cursor-not-allowed disabled:opacity-50 ${
                           currentAtt === "present"
                             ? "bg-emerald-600 text-white shadow-xs"
                             : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
@@ -753,10 +780,11 @@ export const SessionsPage: React.FC = () => {
 
                       <button
                         type="button"
+                        disabled={isTeacher && (Boolean(currentAtt) || attendanceSession?.status === "completed" || teacherAttendanceExpired)}
                         onClick={() =>
                           setStudentAttendanceStatus(student._id, "absent")
                         }
-                        className={`px-3 py-1 rounded-xl font-bold flex items-center gap-1 transition ${
+                        className={`px-3 py-1 rounded-xl font-bold flex items-center gap-1 transition disabled:cursor-not-allowed disabled:opacity-50 ${
                           currentAtt === "absent"
                             ? "bg-rose-600 text-white shadow-xs"
                             : "bg-rose-50 text-rose-700 hover:bg-rose-100"
@@ -768,10 +796,11 @@ export const SessionsPage: React.FC = () => {
 
                       <button
                         type="button"
+                        disabled={isTeacher && (Boolean(currentAtt) || attendanceSession?.status === "completed" || teacherAttendanceExpired)}
                         onClick={() =>
                           setStudentAttendanceStatus(student._id, "late")
                         }
-                        className={`px-3 py-1 rounded-xl font-bold flex items-center gap-1 transition ${
+                        className={`px-3 py-1 rounded-xl font-bold flex items-center gap-1 transition disabled:cursor-not-allowed disabled:opacity-50 ${
                           currentAtt === "late"
                             ? "bg-amber-600 text-white shadow-xs"
                             : "bg-amber-50 text-amber-700 hover:bg-amber-100"
@@ -783,10 +812,11 @@ export const SessionsPage: React.FC = () => {
 
                       <button
                         type="button"
+                        disabled={isTeacher && (Boolean(currentAtt) || attendanceSession?.status === "completed" || teacherAttendanceExpired)}
                         onClick={() =>
                           setStudentAttendanceStatus(student._id, "excused")
                         }
-                        className={`px-3 py-1 rounded-xl font-bold flex items-center gap-1 transition ${
+                        className={`px-3 py-1 rounded-xl font-bold flex items-center gap-1 transition disabled:cursor-not-allowed disabled:opacity-50 ${
                           currentAtt === "excused"
                             ? "bg-sky-600 text-white shadow-xs"
                             : "bg-sky-50 text-sky-700 hover:bg-sky-100"
@@ -802,8 +832,18 @@ export const SessionsPage: React.FC = () => {
             </div>
           )}
 
+          {isTeacher && (
+            <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              {teacherAttendanceExpired
+                ? t('session.attendanceExpired')
+                : t('session.attendanceWindow')}
+              {' '}
+              {t('session.managerEditOnly')}
+            </p>
+          )}
+
           <div className="flex justify-between items-center pt-4 border-t border-slate-100">
-            {attendanceSession?.status !== "completed" && (
+            {canManageAttendance && attendanceSession?.status !== "completed" && (
               <button
                 type="button"
                 onClick={handleCloseSession}

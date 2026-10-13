@@ -14,6 +14,7 @@ import {
   Clock,
   Sparkles,
   CheckCircle,
+  UserCheck,
 } from 'lucide-react';
 import { StatCard } from '../components/common/StatCard';
 import { Badge } from '../components/common/Badge';
@@ -252,6 +253,15 @@ export const DashboardPage: React.FC = () => {
                       <p className="mt-2 text-[11px] text-slate-500">
                         {t('dashboard.teacherAttendanceSummary')}: {t('session.present')} {counts.present || 0} · {t('session.absent')} {counts.absent || 0} · {t('session.late')} {counts.late || 0}
                       </p>
+                      {session.status !== 'cancelled' && (
+                        <Link
+                          to={`/sessions?sessionId=${encodeURIComponent(session._id)}`}
+                          className="mt-3 inline-flex items-center gap-2 rounded-xl bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100"
+                        >
+                          <UserCheck className="h-4 w-4" />
+                          {t('session.attendance')}
+                        </Link>
+                      )}
                     </div>
                   );
                 })}

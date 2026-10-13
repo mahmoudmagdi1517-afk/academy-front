@@ -250,6 +250,9 @@ const translations: Record<Language, Record<string, string>> = {
     'session.postponed': 'Postponed',
     'session.cancelled': 'Cancelled',
     'session.completed': 'Completed',
+    'session.managerEditOnly': 'Only a manager can change a recorded attendance status.',
+    'session.attendanceWindow': 'Teachers can record attendance for up to 24 hours after the session.',
+    'session.attendanceExpired': 'The 24-hour attendance window has expired.',
   },
   ar: {
     // Navigation
@@ -498,6 +501,9 @@ const translations: Record<Language, Record<string, string>> = {
     'session.postponed': 'مؤجلة',
     'session.cancelled': 'ملغاة',
     'session.completed': 'مكتملة',
+    'session.managerEditOnly': 'تعديل الحضور المسجل متاح للمدير فقط.',
+    'session.attendanceWindow': 'يمكن للمدرس تسجيل الحضور خلال 24 ساعة من موعد الحصة.',
+    'session.attendanceExpired': 'انتهت مهلة تسجيل الحضور البالغة 24 ساعة.',
   },
 };
 
