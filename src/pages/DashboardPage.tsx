@@ -255,8 +255,8 @@ export const DashboardPage: React.FC = () => {
                       </p>
                       {session.status !== 'cancelled' && (
                         <Link
-                          to={`/sessions?sessionId=${encodeURIComponent(session._id)}`}
-                          className="mt-3 inline-flex items-center gap-2 rounded-xl bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100"
+                          to={`/attendance/${encodeURIComponent(session._id)}`}
+                          className="mt-3 inline-flex items-center gap-2 rounded-xl bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition shadow-2xs"
                         >
                           <UserCheck className="h-4 w-4" />
                           {t('session.attendance')}

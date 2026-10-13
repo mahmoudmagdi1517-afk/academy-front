@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import {
   CalendarDays,
   Plus,
@@ -461,13 +461,13 @@ export const SessionsPage: React.FC = () => {
                 headerClassName: "text-center",
                 className: "text-center",
                 render: (session) => (
-                  <button
-                    onClick={() => openAttendance(session)}
+                  <Link
+                    to={`/attendance/${encodeURIComponent(session._id)}`}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold transition cursor-pointer"
                   >
                     <UserCheck className="w-3.5 h-3.5" />
                     <span>{t("session.attendance")}</span>
-                  </button>
+                  </Link>
                 ),
               },
               {

@@ -17,6 +17,7 @@ import { HRPage } from './pages/HRPage';
 import { PayrollPage } from './pages/PayrollPage';
 import { TreasuryPage } from './pages/TreasuryPage';
 import { UsersPage } from './pages/UsersPage';
+import { AttendancePage } from './pages/AttendancePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 interface ProtectedRouteProps {
@@ -133,6 +134,24 @@ export const App: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={['owner', 'manager', 'admin', 'teacher']}>
               <SessionsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="attendance"
+          element={
+            <ProtectedRoute allowedRoles={['owner', 'manager', 'admin', 'teacher']}>
+              <AttendancePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="attendance/:sessionId"
+          element={
+            <ProtectedRoute allowedRoles={['owner', 'manager', 'admin', 'teacher']}>
+              <AttendancePage />
             </ProtectedRoute>
           }
         />
