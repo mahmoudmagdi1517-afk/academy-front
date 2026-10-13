@@ -26,14 +26,14 @@ export const sessionApi = {
   cancelSession: (id: string, reason?: string | null) =>
     api.post<Session>(`/api/sessions/${id}/cancel`, { reason }),
 
-  upsertAttendance: (
+  saveAttendanceBatch: (
     sessionId: string,
-    data: {
+    attendance: Array<{
       studentId: string;
-      status: 'present' | 'absent' | 'late' | 'excused';
+      status: 'present' | 'absent' | 'late' | 'excused' | null;
       note?: string | null;
-    }
-  ) => api.post<AttendanceRecord>(`/api/sessions/${sessionId}/attendance`, data),
+    }>
+  ) => api.post<AttendanceRecord[]>(`/api/sessions/${sessionId}/attendance/batch`, { attendance }),
 
   closeSession: (id: string) =>
     api.post<Session>(`/api/sessions/${id}/close`),

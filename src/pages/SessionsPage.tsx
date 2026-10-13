@@ -90,6 +90,7 @@ export const SessionsPage: React.FC = () => {
     Record<string, { status: AttendanceStatus; note: string }>
   >({});
   const [loadingAttendance, setLoadingAttendance] = useState(false);
+  const [savingAttendance, setSavingAttendance] = useState(false);
   const teacherAttendanceExpired =
     isTeacher &&
     attendanceSession?.scheduledEndAt != null &&
@@ -247,24 +248,32 @@ export const SessionsPage: React.FC = () => {
     }, { replace: true });
   }, [error, loading, openAttendance, searchParams, sessions, setSearchParams]);
 
-  const setStudentAttendanceStatus = async (
+  const setStudentAttendanceStatus = (
     studentId: string,
     status: AttendanceStatus,
     note: string = "",
   ) => {
+    setAttendanceMap((prev) => ({
+      ...prev,
+      [studentId]: { status, note },
+    }));
+  };
+
+  const handleSaveAttendance = async () => {
     if (!attendanceSession) return;
+    setSavingAttendance(true);
     try {
-      await sessionApi.upsertAttendance(attendanceSession._id, {
-        studentId,
-        status,
-        note: note || undefined,
-      });
-      setAttendanceMap((prev) => ({
-        ...prev,
-        [studentId]: { status, note },
+      const attendance = sessionStudents.map((student) => ({
+        studentId: student._id,
+        status: attendanceMap[student._id]?.status || null,
+        note: attendanceMap[student._id]?.note || null,
       }));
+      await sessionApi.saveAttendanceBatch(attendanceSession._id, attendance);
+      success(t('session.attendanceSaved'));
     } catch (err: any) {
-      error(err.message || "Failed to record attendance");
+      error(err.message || "Failed to save attendance");
+    } finally {
+      setSavingAttendance(false);
     }
   };
 
@@ -764,7 +773,7 @@ export const SessionsPage: React.FC = () => {
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <button
                         type="button"
-                        disabled={isTeacher && (attendanceSession?.status === "cancelled" || teacherAttendanceExpired)}
+                        disabled={savingAttendance || (isTeacher && (attendanceSession?.status === "cancelled" || teacherAttendanceExpired))}
                         onClick={() =>
                           setStudentAttendanceStatus(student._id, "present")
                         }
@@ -780,7 +789,7 @@ export const SessionsPage: React.FC = () => {
 
                       <button
                         type="button"
-                        disabled={isTeacher && (attendanceSession?.status === "cancelled" || teacherAttendanceExpired)}
+                        disabled={savingAttendance || (isTeacher && (attendanceSession?.status === "cancelled" || teacherAttendanceExpired))}
                         onClick={() =>
                           setStudentAttendanceStatus(student._id, "absent")
                         }
@@ -796,7 +805,7 @@ export const SessionsPage: React.FC = () => {
 
                       <button
                         type="button"
-                        disabled={isTeacher && (attendanceSession?.status === "cancelled" || teacherAttendanceExpired)}
+                        disabled={savingAttendance || (isTeacher && (attendanceSession?.status === "cancelled" || teacherAttendanceExpired))}
                         onClick={() =>
                           setStudentAttendanceStatus(student._id, "late")
                         }
@@ -812,7 +821,7 @@ export const SessionsPage: React.FC = () => {
 
                       <button
                         type="button"
-                        disabled={isTeacher && (attendanceSession?.status === "cancelled" || teacherAttendanceExpired)}
+                        disabled={savingAttendance || (isTeacher && (attendanceSession?.status === "cancelled" || teacherAttendanceExpired))}
                         onClick={() =>
                           setStudentAttendanceStatus(student._id, "excused")
                         }
@@ -850,13 +859,25 @@ export const SessionsPage: React.FC = () => {
                 {t("session.closeSession")}
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => setAttendanceSession(null)}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold ms-auto"
-            >
-              {t("common.close")}
-            </button>
+            <div className="flex gap-2 ms-auto">
+              <button
+                type="button"
+                onClick={() => setAttendanceSession(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold"
+              >
+                {t("common.close")}
+              </button>
+              {sessionStudents.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleSaveAttendance}
+                  disabled={loadingAttendance || savingAttendance || (isTeacher && (attendanceSession?.status === "cancelled" || teacherAttendanceExpired))}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {savingAttendance ? t('session.savingAttendance') : t('session.saveAttendance')}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </Modal>
