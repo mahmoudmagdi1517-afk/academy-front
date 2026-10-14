@@ -99,7 +99,7 @@ export async function request<T = any>(endpoint: string, options: RequestOptions
       } else {
         isRefreshing = true;
         try {
-          const refreshRes = await fetch('/api/auth/refresh', {
+          const refreshRes = await fetch(`${BASE_URL}/api/auth/refresh`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ refreshToken }),

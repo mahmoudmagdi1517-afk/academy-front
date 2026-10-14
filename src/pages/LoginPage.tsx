@@ -123,18 +123,7 @@ export const LoginPage: React.FC = () => {
             </button>
           </form>
 
-          {/* Quick fill demo helper */}
-          <div className="mt-6 pt-6 border-t border-slate-100 flex flex-col items-center gap-2">
-            <span className="text-xs text-slate-400">Development Shortcut</span>
-            <button
-              type="button"
-              onClick={handleFillDemo}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition cursor-pointer"
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Fill Default Owner Account</span>
-            </button>
-          </div>
+       
         </div>
       </div>
     </div>
