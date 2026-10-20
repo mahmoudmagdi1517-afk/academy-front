@@ -106,11 +106,16 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Courses & Groups
     'course.new': 'Create New Course',
+    'course.edit': 'Edit Course',
     'course.code': 'Course Code',
     'course.name': 'Course Title',
     'course.nameAr': 'Title (Arabic)',
     'course.price': 'Default Tuition (QAR)',
     'course.desc': 'Description',
+    'course.delete': 'Delete course',
+    'course.deleteConfirm': 'Archive this course? Its history will be preserved.',
+    'course.updated': 'Course updated successfully.',
+    'course.archived': 'Course archived successfully.',
     'group.new': 'Create New Group',
     'group.name': 'Group Name',
     'group.nameAr': 'Group Name (Arabic)',
@@ -385,11 +390,16 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Courses & Groups
     'course.new': 'إنشاء دورة تعليمية جديدة',
+    'course.edit': 'تعديل بيانات الدورة',
     'course.code': 'رمز الدورة',
     'course.name': 'اسم الدورة',
     'course.nameAr': 'اسم الدورة (عربي)',
     'course.price': 'الرسوم الافتراضية (ر.ق)',
     'course.desc': 'الوصف',
+    'course.delete': 'حذف الدورة',
+    'course.deleteConfirm': 'هل تريد أرشفة هذه الدورة؟ ستظل بياناتها السابقة محفوظة.',
+    'course.updated': 'تم تعديل بيانات الدورة بنجاح.',
+    'course.archived': 'تمت أرشفة الدورة بنجاح.',
     'group.new': 'إنشاء مجموعة جديدة',
     'group.name': 'اسم المجموعة',
     'group.nameAr': 'اسم المجموعة (عربي)',

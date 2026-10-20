@@ -38,6 +38,17 @@ export const academicApi = {
     defaultPrice: number;
   }) => api.post<Course>('/api/courses', data),
 
+  updateCourse: (id: string, data: {
+    code: string;
+    name: string;
+    nameAr?: string | null;
+    description?: string | null;
+    defaultPrice: number;
+  }) => api.patch<Course>(`/api/courses/${id}`, data),
+
+  deleteCourse: (id: string) =>
+    api.delete<Course>(`/api/courses/${id}`),
+
   // Groups
   listGroups: (params?: { courseId?: string }) =>
     api.get<Group[]>('/api/groups', params),

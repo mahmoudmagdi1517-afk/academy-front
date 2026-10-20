@@ -28,7 +28,15 @@ export const CoursesPage: React.FC = () => {
 
   // Course Modal
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [submittingCourse, setSubmittingCourse] = useState(false);
+  const emptyCourseForm = () => ({
+    code: '',
+    name: '',
+    nameAr: '',
+    description: '',
+    defaultPriceQar: '',
+  });
   const [courseForm, setCourseForm] = useState({
     code: '',
     name: '',
@@ -36,6 +44,28 @@ export const CoursesPage: React.FC = () => {
     description: '',
     defaultPriceQar: '',
   });
+
+  const openCourseModal = (course?: Course) => {
+    setEditingCourse(course || null);
+    setCourseForm(
+      course
+        ? {
+            code: course.code,
+            name: course.name,
+            nameAr: course.nameAr || '',
+            description: course.description || '',
+            defaultPriceQar: String(filsToQar(course.defaultPrice)),
+          }
+        : emptyCourseForm()
+    );
+    setIsCourseModalOpen(true);
+  };
+
+  const closeCourseModal = () => {
+    setIsCourseModalOpen(false);
+    setEditingCourse(null);
+    setCourseForm(emptyCourseForm());
+  };
 
   // Group Modal
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
@@ -112,34 +142,44 @@ export const CoursesPage: React.FC = () => {
     loadData();
   }, [selectedCourseFilter]);
 
-  const handleCreateCourse = async (e: React.FormEvent) => {
+  const handleSaveCourse = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!courseForm.code || !courseForm.name || !courseForm.defaultPriceQar) return;
+    if (!courseForm.code.trim() || !courseForm.name.trim() || courseForm.defaultPriceQar === '') return;
 
     setSubmittingCourse(true);
     try {
-      await academicApi.createCourse({
+      const payload = {
         code: courseForm.code.trim().toUpperCase(),
         name: courseForm.name.trim(),
         nameAr: courseForm.nameAr.trim() || null,
         description: courseForm.description.trim() || null,
         defaultPrice: qarToFils(courseForm.defaultPriceQar),
-      });
+      };
+      if (editingCourse) {
+        await academicApi.updateCourse(editingCourse._id, payload);
+        success(t('course.updated'));
+      } else {
+        await academicApi.createCourse(payload);
+        success('Course created successfully');
+      }
 
-      success('Course created successfully');
-      setIsCourseModalOpen(false);
-      setCourseForm({
-        code: '',
-        name: '',
-        nameAr: '',
-        description: '',
-        defaultPriceQar: '',
-      });
-      loadData();
+      closeCourseModal();
+      await loadData();
     } catch (err: any) {
-      error(err.message || 'Failed to create course');
+      error(err.message || (editingCourse ? 'Failed to update course' : 'Failed to create course'));
     } finally {
       setSubmittingCourse(false);
+    }
+  };
+
+  const handleDeleteCourse = async (course: Course) => {
+    if (!window.confirm(t('course.deleteConfirm'))) return;
+    try {
+      await academicApi.deleteCourse(course._id);
+      success(t('course.archived'));
+      await loadData();
+    } catch (err: any) {
+      error(err.message || 'Failed to delete course');
     }
   };
 
@@ -199,7 +239,7 @@ export const CoursesPage: React.FC = () => {
         <div className="flex items-center gap-2">
           {activeTab === 'courses' ? (
             <button
-              onClick={() => setIsCourseModalOpen(true)}
+              onClick={() => openCourseModal()}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-indigo-600/20 transition cursor-pointer"
             >
               <Plus className="w-4 h-4" />
@@ -257,7 +297,7 @@ export const CoursesPage: React.FC = () => {
                 description="Add your first academic course with standard pricing in QAR."
                 icon={BookOpen}
                 actionText="Create Course"
-                onAction={() => setIsCourseModalOpen(true)}
+                onAction={() => openCourseModal()}
               />
             </div>
           ) : (
@@ -271,9 +311,31 @@ export const CoursesPage: React.FC = () => {
                     <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 font-mono font-bold text-xs rounded-lg border border-indigo-100">
                       {course.code}
                     </span>
-                    <Badge variant={course.isActive ? 'success' : 'neutral'} size="sm">
-                      {course.isActive ? 'Active' : 'Archived'}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={course.isActive ? 'success' : 'neutral'} size="sm">
+                        {course.isActive ? 'Active' : 'Archived'}
+                      </Badge>
+                      <button
+                        type="button"
+                        aria-label={t('course.edit')}
+                        title={t('course.edit')}
+                        onClick={() => openCourseModal(course)}
+                        className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      {course.isActive && (
+                        <button
+                          type="button"
+                          aria-label={t('course.delete')}
+                          title={t('course.delete')}
+                          onClick={() => handleDeleteCourse(course)}
+                          className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <h3 className="font-extrabold text-base text-slate-900">{course.name}</h3>
                   {course.nameAr && (
@@ -399,14 +461,14 @@ export const CoursesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Create Course Modal */}
+      {/* Course Modal */}
       <Modal
         isOpen={isCourseModalOpen}
-        onClose={() => setIsCourseModalOpen(false)}
-        title={t('course.new')}
+        onClose={closeCourseModal}
+        title={editingCourse ? t('course.edit') : t('course.new')}
         maxWidth="md"
       >
-        <form onSubmit={handleCreateCourse} className="space-y-4 text-xs">
+        <form onSubmit={handleSaveCourse} className="space-y-4 text-xs">
           <div>
             <label className="block font-bold text-slate-700 mb-1">
               {t('course.code')} *
@@ -481,7 +543,7 @@ export const CoursesPage: React.FC = () => {
           <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
             <button
               type="button"
-              onClick={() => setIsCourseModalOpen(false)}
+              onClick={closeCourseModal}
               className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 font-semibold"
             >
               {t('common.cancel')}
@@ -491,7 +553,7 @@ export const CoursesPage: React.FC = () => {
               disabled={submittingCourse}
               className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold disabled:opacity-50"
             >
-              {submittingCourse ? 'Saving...' : t('common.create')}
+              {submittingCourse ? t('common.loading') : editingCourse ? t('common.save') : t('common.create')}
             </button>
           </div>
         </form>
