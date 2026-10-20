@@ -83,6 +83,9 @@ export const academicApi = {
   getSubscription: (id: string) =>
     api.get<Subscription>(`/api/subscriptions/${id}`),
 
+  deleteSubscription: (id: string) =>
+    api.delete<Subscription>(`/api/subscriptions/${id}`),
+
   subscribe: (data: {
     studentId: string;
     courseId: string;

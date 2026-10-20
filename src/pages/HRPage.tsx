@@ -9,6 +9,8 @@ import {
   Phone,
   Mail,
   GraduationCap,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { Employee, EmployeeRole, SalaryType, SalaryConfiguration } from "../types/hr";
 import { hrApi } from "../api/hr.api";
@@ -31,6 +33,7 @@ export const HRPage: React.FC = () => {
 
   // Add Employee Modal
   const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [submittingEmployee, setSubmittingEmployee] = useState(false);
   const [empForm, setEmpForm] = useState({
     name: "",
@@ -91,7 +94,37 @@ export const HRPage: React.FC = () => {
     loadData();
   }, []);
 
-  const handleCreateEmployee = async (e: React.FormEvent) => {
+  const openCreateEmployee = () => {
+    setEditingEmployee(null);
+    setEmpForm({
+      name: "",
+      nameAr: "",
+      phone: "",
+      email: "",
+      hireDate: getQatarToday(),
+      role: "instructor",
+      specialties: "",
+      notes: "",
+    });
+    setIsEmployeeModalOpen(true);
+  };
+
+  const openEditEmployee = (employee: Employee) => {
+    setEditingEmployee(employee);
+    setEmpForm({
+      name: employee.name,
+      nameAr: employee.nameAr || "",
+      phone: employee.phone || "",
+      email: employee.email || "",
+      hireDate: employee.hireDate || "",
+      role: employee.role || (employee.isTeacher ? "instructor" : "staff"),
+      specialties: employee.specialties?.join(", ") || "",
+      notes: employee.notes || "",
+    });
+    setIsEmployeeModalOpen(true);
+  };
+
+  const handleEmployeeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!empForm.name.trim()) return;
 
@@ -102,7 +135,7 @@ export const HRPage: React.FC = () => {
         .map((s) => s.trim())
         .filter(Boolean);
 
-      await hrApi.createEmployee({
+      const payload = {
         name: empForm.name.trim(),
         nameAr: empForm.nameAr.trim() || null,
         phone: empForm.phone.trim() || null,
@@ -111,25 +144,34 @@ export const HRPage: React.FC = () => {
         role: empForm.role,
         specialties: specs,
         notes: empForm.notes.trim() || null,
-      });
+      };
 
-      success("Employee profile created");
+      if (editingEmployee) {
+        await hrApi.updateEmployee(editingEmployee._id, payload);
+        success(t("employee.updated"));
+      } else {
+        await hrApi.createEmployee(payload);
+        success("Employee profile created");
+      }
+
       setIsEmployeeModalOpen(false);
-      setEmpForm({
-        name: "",
-        nameAr: "",
-        phone: "",
-        email: "",
-        hireDate: getQatarToday(),
-        role: "instructor",
-        specialties: "",
-        notes: "",
-      });
-      loadData();
+      setEditingEmployee(null);
+      await loadData();
     } catch (err: any) {
-      error(err.message || "Failed to create employee");
+      error(err.message || (editingEmployee ? "Failed to update employee" : "Failed to create employee"));
     } finally {
       setSubmittingEmployee(false);
+    }
+  };
+
+  const handleDeleteEmployee = async (employee: Employee) => {
+    if (!window.confirm(t("employee.deleteConfirm"))) return;
+    try {
+      await hrApi.deleteEmployee(employee._id);
+      success(t("employee.deleted"));
+      await loadData();
+    } catch (err: any) {
+      error(err.message || "Failed to delete employee");
     }
   };
 
@@ -221,7 +263,7 @@ export const HRPage: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setIsEmployeeModalOpen(true)}
+          onClick={openCreateEmployee}
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-indigo-600/20 transition cursor-pointer"
         >
           <Plus className="w-4 h-4" />
@@ -240,7 +282,7 @@ export const HRPage: React.FC = () => {
             description="Add teachers and administrative staff to manage payroll and courses."
             icon={Users}
             actionText="Add Employee"
-            onAction={() => setIsEmployeeModalOpen(true)}
+            onAction={openCreateEmployee}
           />
         ) : (
           <DataTable
@@ -326,6 +368,22 @@ export const HRPage: React.FC = () => {
                 render: (employee) => (
                   <div className="flex items-center justify-center gap-1.5">
                     <button
+                      onClick={() => openEditEmployee(employee)}
+                      title={t("employee.edit")}
+                      aria-label={t("employee.edit")}
+                      className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteEmployee(employee)}
+                      title={t("common.delete")}
+                      aria-label={t("common.delete")}
+                      className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <button
                       onClick={() => {
                         setSalaryTargetEmployee(employee);
                         setSalaryForm({
@@ -377,14 +435,17 @@ export const HRPage: React.FC = () => {
         )}
       </div>
 
-      {/* Add Employee Modal */}
+      {/* Employee Modal */}
       <Modal
         isOpen={isEmployeeModalOpen}
-        onClose={() => setIsEmployeeModalOpen(false)}
-        title="Add New Employee"
+        onClose={() => {
+          setIsEmployeeModalOpen(false);
+          setEditingEmployee(null);
+        }}
+        title={editingEmployee ? t("employee.edit") : "Add New Employee"}
         maxWidth="lg"
       >
-        <form onSubmit={handleCreateEmployee} className="space-y-4 text-xs">
+        <form onSubmit={handleEmployeeSubmit} className="space-y-4 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block font-bold text-slate-700 mb-1">
@@ -482,19 +543,34 @@ export const HRPage: React.FC = () => {
             )}
 
             {empForm.role === "instructor" && (
-              <div className="sm:col-span-2">
-              <label className="block font-bold text-slate-700 mb-1">
-                Specialties / Subjects (comma-separated)
-              </label>
-              <input
-                type="text"
-                placeholder="English, IELTS, Mathematics, Physics"
-                value={empForm.specialties}
-                onChange={(e) =>
-                  setEmpForm({ ...empForm, specialties: e.target.value })
-                }
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 outline-hidden"
-              />
+              <div className="sm:col-span-2 space-y-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Specialties / Subjects (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="English, IELTS, Mathematics, Physics"
+                    value={empForm.specialties}
+                    onChange={(e) =>
+                      setEmpForm({ ...empForm, specialties: e.target.value })
+                    }
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 outline-hidden"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    {t("common.notes")}
+                  </label>
+                  <textarea
+                    value={empForm.notes}
+                    onChange={(e) =>
+                      setEmpForm({ ...empForm, notes: e.target.value })
+                    }
+                    rows={2}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 outline-hidden"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -502,7 +578,10 @@ export const HRPage: React.FC = () => {
           <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
             <button
               type="button"
-              onClick={() => setIsEmployeeModalOpen(false)}
+              onClick={() => {
+                setIsEmployeeModalOpen(false);
+                setEditingEmployee(null);
+              }}
               className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl font-semibold"
             >
               {t("common.cancel")}
@@ -512,7 +591,11 @@ export const HRPage: React.FC = () => {
               disabled={submittingEmployee}
               className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold disabled:opacity-50"
             >
-              {submittingEmployee ? "Saving..." : t("common.create")}
+              {submittingEmployee
+                ? "Saving..."
+                : editingEmployee
+                  ? t("common.save")
+                  : t("common.create")}
             </button>
           </div>
         </form>

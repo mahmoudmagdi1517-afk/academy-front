@@ -1,22 +1,30 @@
 import { api } from './client';
 import { Employee, EmployeeRole, Leave, NotificationItem, Payroll, SalaryConfiguration } from '../types/hr';
 
+type EmployeeInput = {
+  name: string;
+  nameAr?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  hireDate?: string | null;
+  role: EmployeeRole;
+  specialties?: string[];
+  notes?: string | null;
+};
+
 export const hrApi = {
   // Employees
   listEmployees: () =>
     api.get<Employee[]>('/api/hr/employees'),
 
-  createEmployee: (data: {
-    employeeCode?: string;
-    name: string;
-    nameAr?: string | null;
-    phone?: string | null;
-    email?: string | null;
-    hireDate?: string | null;
-    role: EmployeeRole;
-    specialties?: string[];
-    notes?: string | null;
-  }) => api.post<Employee>('/api/hr/employees', data),
+  createEmployee: (data: EmployeeInput) =>
+    api.post<Employee>('/api/hr/employees', data),
+
+  updateEmployee: (employeeId: string, data: EmployeeInput) =>
+    api.patch<Employee>(`/api/hr/employees/${employeeId}`, data),
+
+  deleteEmployee: (employeeId: string) =>
+    api.delete<Employee>(`/api/hr/employees/${employeeId}`),
 
   // Salary
   setSalary: (

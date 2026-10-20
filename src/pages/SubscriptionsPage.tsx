@@ -9,6 +9,8 @@ import {
   Clock,
   AlertCircle,
   FileSpreadsheet,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import {
   Course,
@@ -79,6 +81,7 @@ export const SubscriptionsPage: React.FC = () => {
     }>
   >([]);
   const [modifyingPlanLoading, setModifyingPlanLoading] = useState(false);
+  const [deletingSubscriptionId, setDeletingSubscriptionId] = useState<string | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -319,6 +322,20 @@ export const SubscriptionsPage: React.FC = () => {
     }
   };
 
+  const handleDeleteSubscription = async (subscription: Subscription) => {
+    if (!window.confirm(t("sub.deleteConfirm"))) return;
+    setDeletingSubscriptionId(subscription._id);
+    try {
+      await academicApi.deleteSubscription(subscription._id);
+      success(t("sub.deleted"));
+      await loadData();
+    } catch (err: any) {
+      error(err.message || "Failed to delete subscription");
+    } finally {
+      setDeletingSubscriptionId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -469,6 +486,16 @@ export const SubscriptionsPage: React.FC = () => {
                 className: "text-center",
                 render: (subscription) => (
                   <div className="flex items-center justify-center gap-1.5">
+                    {hasRole("owner", "manager") && (
+                      <button
+                        onClick={() => openModifyPlan(subscription)}
+                        title={t("sub.edit")}
+                        aria-label={t("sub.edit")}
+                        className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition cursor-pointer"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setTransferModalSub(subscription);
@@ -483,6 +510,15 @@ export const SubscriptionsPage: React.FC = () => {
                       className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       <ArrowRightLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSubscription(subscription)}
+                      disabled={deletingSubscriptionId === subscription._id}
+                      title={t("common.delete")}
+                      aria-label={t("common.delete")}
+                      className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 ),

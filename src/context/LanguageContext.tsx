@@ -93,6 +93,10 @@ const translations: Record<Language, Record<string, string>> = {
     'employee.staff': 'Staff',
     'employee.manager': 'Manager',
     'employee.accountLinkHint': 'Create the employee profile first, then create and link the manager login from System Users.',
+    'employee.edit': 'Edit Employee',
+    'employee.updated': 'Employee updated successfully.',
+    'employee.deleted': 'Employee deleted successfully.',
+    'employee.deleteConfirm': 'Delete this employee? Employees linked to an account, payroll, or group records cannot be deleted.',
 
     // Students
     'student.new': 'New Student Registration',
@@ -146,6 +150,9 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Subscriptions
     'sub.new': 'New Enrollment',
+    'sub.edit': 'Edit installment plan',
+    'sub.deleted': 'Subscription deleted successfully.',
+    'sub.deleteConfirm': 'Delete this subscription? It can only be deleted before the group starts and when it has no payment history.',
     'sub.selectStudent': 'Select Student',
     'sub.selectCourse': 'Select Course',
     'sub.selectGroup': 'Select Group',
@@ -377,6 +384,10 @@ const translations: Record<Language, Record<string, string>> = {
     'employee.staff': 'موظف',
     'employee.manager': 'مدير',
     'employee.accountLinkHint': 'أنشئ ملف الموظف أولاً، ثم أنشئ حساب المدير واربطه به من صفحة مستخدمي النظام.',
+    'employee.edit': 'تعديل الموظف',
+    'employee.updated': 'تم تعديل بيانات الموظف بنجاح.',
+    'employee.deleted': 'تم حذف الموظف بنجاح.',
+    'employee.deleteConfirm': 'هل تريد حذف هذا الموظف؟ لا يمكن حذف الموظف المرتبط بحساب أو رواتب أو مجموعات.',
 
     // Students
     'student.new': 'تسجيل طالب جديد',
@@ -430,6 +441,9 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Subscriptions
     'sub.new': 'تسجيل اشتراك جديد',
+    'sub.edit': 'تعديل خطة الأقساط',
+    'sub.deleted': 'تم حذف الاشتراك بنجاح.',
+    'sub.deleteConfirm': 'هل تريد حذف هذا الاشتراك؟ يمكن حذفه فقط قبل بداية المجموعة وبشرط عدم وجود مدفوعات سابقة.',
     'sub.selectStudent': 'اختر الطالب',
     'sub.selectCourse': 'اختر الدورة',
     'sub.selectGroup': 'اختر المجموعة',
