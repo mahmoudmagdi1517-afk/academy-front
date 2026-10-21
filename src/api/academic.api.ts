@@ -76,6 +76,9 @@ export const academicApi = {
     scheduleNote?: string | null;
   }) => api.patch<Group>(`/api/groups/${id}`, data),
 
+  deleteGroup: (id: string) =>
+    api.delete<Group>(`/api/groups/${id}`),
+
   // Subscriptions
   listSubscriptions: (params?: { studentId?: string; groupId?: string; status?: string }) =>
     api.get<Subscription[]>('/api/subscriptions', params),

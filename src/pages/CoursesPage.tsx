@@ -71,6 +71,7 @@ export const CoursesPage: React.FC = () => {
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [submittingGroup, setSubmittingGroup] = useState(false);
+  const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null);
   const emptyGroupForm = () => ({
     courseId: '',
     name: '',
@@ -220,6 +221,20 @@ export const CoursesPage: React.FC = () => {
       error(err.message || 'Failed to create group');
     } finally {
       setSubmittingGroup(false);
+    }
+  };
+
+  const handleDeleteGroup = async (group: Group) => {
+    if (!window.confirm(t('group.deleteConfirm'))) return;
+    setDeletingGroupId(group._id);
+    try {
+      await academicApi.deleteGroup(group._id);
+      success(t('group.deleted'));
+      await loadData();
+    } catch (err: any) {
+      error(err.message || t('group.deleteError'));
+    } finally {
+      setDeletingGroupId(null);
     }
   };
 
@@ -445,14 +460,28 @@ export const CoursesPage: React.FC = () => {
                         {teacher ? teacher.name : 'Unassigned'}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => openGroupModal(group)}
-                      className="mt-3 inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-50"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      {t('group.edit')}
-                    </button>
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openGroupModal(group)}
+                        className="inline-flex flex-1 items-center justify-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-50"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        {t('group.edit')}
+                      </button>
+                      {group.startDate && group.startDate > getQatarToday() && (
+                        <button
+                          type="button"
+                          aria-label={t('group.delete')}
+                          title={t('group.delete')}
+                          disabled={deletingGroupId === group._id}
+                          onClick={() => handleDeleteGroup(group)}
+                          className="inline-flex items-center justify-center px-3 py-2 border border-rose-200 text-rose-600 rounded-xl hover:bg-rose-50 disabled:opacity-50"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })

@@ -1,6 +1,7 @@
 export type CashboxType = 'cash' | 'bank';
 export type TreasuryTransactionKind =
   | 'opening_balance'
+  | 'deposit'
   | 'income'
   | 'expense'
   | 'payroll'
@@ -22,6 +23,7 @@ export interface TreasuryTransaction {
   kind: TreasuryTransactionKind;
   amount: number;
   description: string;
+  source?: string | null;
   occurredAt: string;
   createdAt: string;
 }

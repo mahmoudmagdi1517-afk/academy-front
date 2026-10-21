@@ -13,4 +13,7 @@ export const treasuryApi = {
     type: Cashbox['type'];
     openingBalance: number;
   }) => api.post<Cashbox>('/api/treasury/cashboxes', data),
+
+  addFunds: (cashboxId: string, data: { amount: number; source: string }) =>
+    api.post<TreasuryTransaction>(`/api/treasury/cashboxes/${cashboxId}/deposits`, data),
 };

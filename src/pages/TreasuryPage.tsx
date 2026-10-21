@@ -21,6 +21,10 @@ export const TreasuryPage: React.FC = () => {
   const [name, setName] = useState('');
   const [type, setType] = useState<Cashbox['type']>('cash');
   const [openingBalance, setOpeningBalance] = useState('0');
+  const [depositCashbox, setDepositCashbox] = useState<Cashbox | null>(null);
+  const [depositAmount, setDepositAmount] = useState('');
+  const [depositSource, setDepositSource] = useState('');
+  const [depositSubmitting, setDepositSubmitting] = useState(false);
 
   const loadSummary = async () => {
     setLoading(true);
@@ -57,6 +61,32 @@ export const TreasuryPage: React.FC = () => {
       error(err.message || t('treasury.createError'));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleAddFunds = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!depositCashbox) return;
+    const amount = qarToFils(depositAmount);
+    if (amount <= 0 || !depositSource.trim()) {
+      error(t('treasury.invalidDeposit'));
+      return;
+    }
+    setDepositSubmitting(true);
+    try {
+      await treasuryApi.addFunds(depositCashbox._id, {
+        amount,
+        source: depositSource.trim(),
+      });
+      success(t('treasury.depositRecorded'));
+      setDepositCashbox(null);
+      setDepositAmount('');
+      setDepositSource('');
+      await loadSummary();
+    } catch (err: any) {
+      error(err.message || t('treasury.depositError'));
+    } finally {
+      setDepositSubmitting(false);
     }
   };
 
@@ -102,6 +132,18 @@ export const TreasuryPage: React.FC = () => {
                   <p className="text-[11px] text-slate-400">{t(`treasury.type.${cashbox.type}`)}</p>
                   <p className="text-lg font-extrabold text-slate-900 mt-1">{formatQAR(cashbox.balance)}</p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDepositCashbox(cashbox);
+                    setDepositAmount('');
+                    setDepositSource('');
+                  }}
+                  className="ms-auto shrink-0 inline-flex items-center gap-1 px-2.5 py-2 border border-indigo-200 text-indigo-700 rounded-xl text-[11px] font-bold hover:bg-indigo-50"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  {t('treasury.addFunds')}
+                </button>
               </div>
             ))}
           </div>
@@ -123,7 +165,7 @@ export const TreasuryPage: React.FC = () => {
             columns={[
               { key: 'date', header: t('treasury.date'), render: (transaction) => formatDateTime(transaction.occurredAt) },
               { key: 'account', header: t('treasury.account'), render: (transaction) => typeof transaction.cashboxId === 'string' ? '—' : transaction.cashboxId.name },
-              { key: 'description', header: t('treasury.description'), render: (transaction) => <><div className="font-bold text-slate-800">{transaction.description}</div><div className="text-[11px] text-slate-400">{t(`treasury.kind.${transaction.kind}`)}</div></> },
+              { key: 'description', header: t('treasury.description'), render: (transaction) => <><div className="font-bold text-slate-800">{transaction.description}</div>{transaction.source && <div className="text-[11px] text-slate-500">{t('treasury.source')}: {transaction.source}</div>}<div className="text-[11px] text-slate-400">{t(`treasury.kind.${transaction.kind}`)}</div></> },
               { key: 'amount', header: t('treasury.amount'), className: 'font-extrabold', render: (transaction) => <span className={transaction.amount >= 0 ? 'text-emerald-600' : 'text-rose-600'}>{transaction.amount >= 0 ? <ArrowDownLeft className="inline w-3.5 h-3.5 me-1" /> : <ArrowUpRight className="inline w-3.5 h-3.5 me-1" />}{formatQAR(Math.abs(transaction.amount))}</span> },
             ]}
           />
@@ -150,6 +192,59 @@ export const TreasuryPage: React.FC = () => {
           <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
             <button type="button" onClick={() => setCreateOpen(false)} className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl font-semibold">{t('common.cancel')}</button>
             <button type="submit" disabled={submitting} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold disabled:opacity-50">{submitting ? t('common.loading') : t('common.save')}</button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        isOpen={Boolean(depositCashbox)}
+        onClose={() => setDepositCashbox(null)}
+        title={t('treasury.addFunds')}
+        maxWidth="md"
+      >
+        <form onSubmit={handleAddFunds} className="space-y-4 text-xs">
+          <p className="text-slate-500">
+            {t('treasury.depositAccount')}: <span className="font-bold text-slate-700">{depositCashbox?.name}</span>
+          </p>
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">{t('treasury.amount')} (QAR) *</label>
+            <input
+              type="number"
+              required
+              min="0.01"
+              step="0.01"
+              value={depositAmount}
+              onChange={(event) => setDepositAmount(event.target.value)}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 outline-hidden font-bold"
+            />
+          </div>
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">{t('treasury.source')} *</label>
+            <input
+              required
+              minLength={2}
+              maxLength={200}
+              value={depositSource}
+              onChange={(event) => setDepositSource(event.target.value)}
+              placeholder={t('treasury.sourceHint')}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 outline-hidden"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setDepositCashbox(null)}
+              className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl font-semibold"
+            >
+              {t('common.cancel')}
+            </button>
+            <button
+              type="submit"
+              disabled={depositSubmitting}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold disabled:opacity-50"
+            >
+              {depositSubmitting ? t('common.loading') : t('treasury.addFunds')}
+            </button>
           </div>
         </form>
       </Modal>
