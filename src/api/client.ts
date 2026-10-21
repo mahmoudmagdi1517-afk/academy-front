@@ -1,6 +1,7 @@
 import { ApiResponse } from '../types/auth';
 
-const BASE_URL = "https://back-end-academy-production.up.railway.app";
+// const BASE_URL = "https://back-end-academy-production.up.railway.app";
+const BASE_URL = "https://back-end-academy.vercel.app";
 // const BASE_URL = "http://localhost:5000";
 
 interface RequestOptions extends RequestInit {
