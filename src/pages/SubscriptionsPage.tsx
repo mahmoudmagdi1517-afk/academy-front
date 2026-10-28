@@ -11,6 +11,7 @@ import {
   FileSpreadsheet,
   Pencil,
   Trash2,
+  RotateCcw,
 } from "lucide-react";
 import {
   Course,
@@ -52,6 +53,10 @@ export const SubscriptionsPage: React.FC = () => {
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState("");
+  const [lessonsPurchased, setLessonsPurchased] = useState("");
+  const [renewalOfId, setRenewalOfId] = useState("");
+  const [isRenewal, setIsRenewal] = useState(false);
+  const [showFinishedOnly, setShowFinishedOnly] = useState(false);
   const [customPriceQar, setCustomPriceQar] = useState("");
   const [initialPaymentQar, setInitialPaymentQar] = useState("0");
   const [initialPaymentMethod, setInitialPaymentMethod] = useState("cash");
@@ -193,6 +198,12 @@ export const SubscriptionsPage: React.FC = () => {
     e.preventDefault();
     if (!selectedStudentId || !selectedCourseId || !selectedGroupId) return;
 
+    const purchasedLessons = Number(lessonsPurchased);
+    if (!Number.isInteger(purchasedLessons) || purchasedLessons < 1 || purchasedLessons > 500) {
+      error("Package lessons must be a whole number between 1 and 500");
+      return;
+    }
+
     const priceFils = qarToFils(customPriceQar);
     const initialPaymentFils = qarToFils(initialPaymentQar);
     if (initialPaymentFils < 0 || initialPaymentFils > priceFils) {
@@ -224,6 +235,8 @@ export const SubscriptionsPage: React.FC = () => {
         studentId: selectedStudentId,
         courseId: selectedCourseId,
         groupId: selectedGroupId,
+        lessonsPurchased: purchasedLessons,
+        renewalOfId: renewalOfId || undefined,
         price: priceFils,
         installments: instPayload,
         notes: notes.trim() || null,
@@ -239,14 +252,20 @@ export const SubscriptionsPage: React.FC = () => {
       });
 
       success(
-        initialPaymentFils > 0
-          ? "Student enrolled and payment receipt created successfully"
-          : "Student enrolled successfully",
+        isRenewal
+          ? t("sub.renewed")
+          : initialPaymentFils > 0
+            ? "Student enrolled and payment receipt created successfully"
+            : "Student enrolled successfully",
       );
       setIsSubscribeOpen(false);
+      setIsRenewal(false);
+      setRenewalOfId("");
+      setShowFinishedOnly(false);
       setSelectedStudentId("");
       setSelectedCourseId("");
       setSelectedGroupId("");
+      setLessonsPurchased("");
       setCustomPriceQar("");
       setInitialPaymentQar("0");
       setInitialPaymentMethod("cash");
@@ -336,6 +355,44 @@ export const SubscriptionsPage: React.FC = () => {
     }
   };
 
+  const openSubscriptionModal = (subscription?: Subscription) => {
+    setIsRenewal(Boolean(subscription));
+    setRenewalOfId(subscription?._id || "");
+    setSelectedStudentId(subscription?.studentId || "");
+    setSelectedCourseId(subscription?.courseId || "");
+    setSelectedGroupId(subscription?.groupId || "");
+    const group = groups.find((item) => item._id === subscription?.groupId);
+    setLessonsPurchased(
+      subscription
+        ? String(subscription.lessonsPurchased ?? group?.sessionCount ?? "")
+        : "",
+    );
+    const course = courses.find((item) => item._id === subscription?.courseId);
+    const price = subscription?.price ?? course?.defaultPrice ?? 0;
+    setCustomPriceQar(filsToQar(price).toString());
+    setInitialPaymentQar("0");
+    setInitialPaymentMethod("cash");
+    setInitialPaymentNotes("");
+    setNotes("");
+    setInstallments([
+      { dueDate: getQatarToday(), amountQar: filsToQar(price).toFixed(2) },
+    ]);
+    setIsSubscribeOpen(true);
+  };
+
+  const finishedSubscriptions = subscriptions.filter(
+    (subscription) =>
+      subscription.lessonsRemaining === 0 &&
+      !subscription.renewedToSubscriptionId &&
+      ["active", "completed"].includes(subscription.status),
+  );
+  const finishedStudentCount = new Set(
+    finishedSubscriptions.map((subscription) => subscription.studentId),
+  ).size;
+  const visibleSubscriptions = showFinishedOnly
+    ? finishedSubscriptions
+    : subscriptions;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -350,7 +407,7 @@ export const SubscriptionsPage: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setIsSubscribeOpen(true)}
+          onClick={() => openSubscriptionModal()}
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-indigo-600/20 transition cursor-pointer"
         >
           <Plus className="w-4 h-4" />
@@ -358,22 +415,51 @@ export const SubscriptionsPage: React.FC = () => {
         </button>
       </div>
 
+      {finishedStudentCount > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <AlertCircle className="h-5 w-5 shrink-0 text-amber-600" />
+            <span>
+              {t("sub.renewalAlert").replace(
+                "{count}",
+                String(finishedStudentCount),
+              )}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowFinishedOnly((current) => !current)}
+            className="shrink-0 rounded-xl bg-amber-100 px-3 py-2 text-xs font-bold text-amber-900 transition hover:bg-amber-200"
+          >
+            {showFinishedOnly ? t("sub.viewAll") : t("sub.viewFinished")}
+          </button>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         {loading ? (
           <div className="py-20 text-center text-xs text-slate-400 font-medium">
             Loading enrollment records...
           </div>
-        ) : subscriptions.length === 0 ? (
+        ) : visibleSubscriptions.length === 0 ? (
           <EmptyState
-            title="No enrollments recorded"
-            description="Enroll students into course groups with scheduled installments."
+            title={showFinishedOnly ? "No finished subscriptions" : "No enrollments recorded"}
+            description={
+              showFinishedOnly
+                ? "There are no course-finished subscriptions to show."
+                : "Enroll students into course groups with scheduled installments."
+            }
             icon={FileCheck}
-            actionText="New Enrollment"
-            onAction={() => setIsSubscribeOpen(true)}
+            actionText={showFinishedOnly ? t("sub.viewAll") : "New Enrollment"}
+            onAction={() =>
+              showFinishedOnly
+                ? setShowFinishedOnly(false)
+                : openSubscriptionModal()
+            }
           />
         ) : (
           <DataTable
-            rows={subscriptions}
+            rows={visibleSubscriptions}
             rowKey={(subscription) => subscription._id}
             columns={[
               {
@@ -463,19 +549,37 @@ export const SubscriptionsPage: React.FC = () => {
               },
               {
                 key: "status",
-                header: "Status",
+                header: t("sub.courseStatus"),
                 render: (subscription) => (
                   <Badge
                     variant={
-                      subscription.status === "active"
-                        ? "success"
-                        : subscription.status === "completed"
-                          ? "info"
-                          : "neutral"
+                      subscription.lessonsRemaining === 0
+                        ? "info"
+                        : "success"
                     }
                     size="sm"
                   >
-                    {subscription.status}
+                    {subscription.lessonsRemaining === 0
+                      ? t("sub.courseFinished")
+                      : t("sub.courseActive")}
+                  </Badge>
+                ),
+              },
+              {
+                key: "paidStatus",
+                header: t("sub.paidStatus"),
+                render: (subscription) => (
+                  <Badge
+                    variant={
+                      subscription.remainingAmount > 0
+                        ? "success"
+                        : "info"
+                    }
+                    size="sm"
+                  >
+                    {subscription.remainingAmount > 0
+                      ? t("sub.paidActive")
+                      : t("sub.paidFinished")}
                   </Badge>
                 ),
               },
@@ -486,6 +590,19 @@ export const SubscriptionsPage: React.FC = () => {
                 className: "text-center",
                 render: (subscription) => (
                   <div className="flex items-center justify-center gap-1.5">
+                    {subscription.lessonsRemaining === 0 &&
+                      !subscription.renewedToSubscriptionId &&
+                      ["active", "completed"].includes(subscription.status) && (
+                        <button
+                          onClick={() => openSubscriptionModal(subscription)}
+                          title={t("sub.renew")}
+                          aria-label={t("sub.renew")}
+                          className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-50"
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                          <span>{t("sub.renew")}</span>
+                        </button>
+                      )}
                     {hasRole("owner", "manager") && (
                       <button
                         onClick={() => openModifyPlan(subscription)}
@@ -532,7 +649,7 @@ export const SubscriptionsPage: React.FC = () => {
       <Modal
         isOpen={isSubscribeOpen}
         onClose={() => setIsSubscribeOpen(false)}
-        title={t("sub.new")}
+        title={isRenewal ? t("sub.renewal") : t("sub.new")}
         maxWidth="2xl"
       >
         <form onSubmit={handleSubscribeSubmit} className="space-y-4 text-xs">
@@ -563,7 +680,16 @@ export const SubscriptionsPage: React.FC = () => {
               <SearchableSelect
                 required
                 value={selectedCourseId}
-                onChange={setSelectedCourseId}
+                onChange={(courseId) => {
+                  setSelectedCourseId(courseId);
+                  const selectedGroup = groups.find(
+                    (group) => group._id === selectedGroupId,
+                  );
+                  if (selectedGroup && selectedGroup.courseId !== courseId) {
+                    setSelectedGroupId("");
+                    setLessonsPurchased("");
+                  }
+                }}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 outline-hidden"
               >
                 <option value="">-- Choose Course --</option>
@@ -582,7 +708,13 @@ export const SubscriptionsPage: React.FC = () => {
               <SearchableSelect
                 required
                 value={selectedGroupId}
-                onChange={setSelectedGroupId}
+                onChange={(groupId) => {
+                  setSelectedGroupId(groupId);
+                  const group = groups.find((item) => item._id === groupId);
+                  setLessonsPurchased(
+                    group?.sessionCount ? String(group.sessionCount) : "",
+                  );
+                }}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 outline-hidden"
               >
                 <option value="">-- Choose Group --</option>
@@ -596,6 +728,22 @@ export const SubscriptionsPage: React.FC = () => {
                     </option>
                   ))}
               </SearchableSelect>
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">
+                {t("sub.lessonsPurchased")} *
+              </label>
+              <input
+                type="number"
+                required
+                min="1"
+                max="500"
+                step="1"
+                value={lessonsPurchased}
+                onChange={(e) => setLessonsPurchased(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 outline-hidden"
+              />
             </div>
 
             <div>

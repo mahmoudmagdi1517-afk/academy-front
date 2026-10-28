@@ -93,6 +93,8 @@ export const academicApi = {
     studentId: string;
     courseId: string;
     groupId: string;
+    lessonsPurchased?: number;
+    renewalOfId?: string;
     price?: number;
     installments?: Array<{ dueDate: string; amount: number }>;
     notes?: string | null;

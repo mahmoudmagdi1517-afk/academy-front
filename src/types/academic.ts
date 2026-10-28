@@ -69,8 +69,10 @@ export interface Subscription {
   currency: string;
   price: number;
   paidAmount: number;
+  remainingAmount: number;
   lessonsPurchased: number | null;
   lessonsRemaining: number | null;
+  renewedToSubscriptionId?: string | null;
   groupTransferHistory?: Array<{
     at: string;
     actorId: string;
