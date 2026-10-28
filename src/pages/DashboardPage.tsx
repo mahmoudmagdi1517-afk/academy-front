@@ -223,11 +223,8 @@ export const DashboardPage: React.FC = () => {
           <Link to="/my-groups" className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700">
             <BookOpen className="h-4 w-4" /> {t('teacher.openGroups')}
           </Link>
-          <Link to="/attendance" className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-700">
-            <UserCheck className="h-4 w-4" /> {t('teacher.openAttendance')}
-          </Link>
-          <Link to="/my-schedule" className="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2.5 text-xs font-bold text-white hover:bg-slate-700">
-            <Calendar className="h-4 w-4" /> {t('nav.mySchedule')}
+          <Link to="/my-schedule" className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-700">
+            <Calendar className="h-4 w-4" /> {t('teacher.openSchedule')}
           </Link>
         </div>
 
@@ -262,7 +259,7 @@ export const DashboardPage: React.FC = () => {
           <section className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold text-slate-800">{t('dashboard.teacherToday')}</h3>
-              <Link to="/sessions" className="text-xs font-bold text-indigo-600 hover:text-indigo-800">{t('nav.sessions')}</Link>
+              <Link to="/my-schedule" className="text-xs font-bold text-indigo-600 hover:text-indigo-800">{t('teacher.openSchedule')}</Link>
             </div>
             {!dashboard?.sessions.length ? (
               <p className="py-8 text-center text-sm text-slate-400">{loading ? t('common.loading') : t('dashboard.teacherNoSessions')}</p>

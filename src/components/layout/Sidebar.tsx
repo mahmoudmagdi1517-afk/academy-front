@@ -15,7 +15,6 @@ import {
   UserCog,
   LogOut,
   Sparkles,
-  ClipboardCheck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -70,12 +69,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       roles: ['teacher'],
     },
     {
-      to: '/attendance',
-      labelKey: 'nav.attendance',
-      icon: ClipboardCheck,
-      roles: ['teacher'],
-    },
-    {
       to: '/attendance-reports',
       labelKey: 'nav.attendanceReports',
       icon: FileCheck,
@@ -115,7 +108,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       to: '/sessions',
       labelKey: 'nav.sessions',
       icon: CalendarDays,
-      roles: ['owner', 'manager', 'admin', 'teacher'],
+      roles: ['owner', 'manager', 'admin'],
     },
     {
       to: '/makeups',

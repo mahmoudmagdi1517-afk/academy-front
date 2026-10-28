@@ -83,13 +83,24 @@ export const AttendanceReportsPage: React.FC = () => {
       })
       .map((student) => ({
         ...student,
-        summary: getStudentAttendanceSummary(sessions, student.id),
+        summary: getStudentAttendanceSummary(
+          sessions.filter((session) => session.groupId === student.groupId),
+          student.id,
+        ),
       }))
       .sort((a, b) => b.summary.absent - a.summary.absent);
   }, [language, search, sessions]);
 
   const missingSessions = sessions.filter(hasMissingAttendance);
   const mostAbsent = studentRows.slice().sort((a, b) => b.summary.absent - a.summary.absent).slice(0, 5);
+  const reportableSessions = sessions.filter((session) => session.status !== 'cancelled');
+  const attendanceTotals = reportableSessions.flatMap((session) => session.attendance);
+  const countedAttendance = attendanceTotals.filter((record) =>
+    ['present', 'absent', 'late'].includes(record.status)
+  ).length;
+  const attendanceRate = countedAttendance
+    ? Math.round((attendanceTotals.filter((record) => record.status === 'present' || record.status === 'late').length / countedAttendance) * 100)
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -138,6 +149,23 @@ export const AttendanceReportsPage: React.FC = () => {
         <div className="py-12 text-center text-sm text-slate-500">{t('common.loading')}</div>
       ) : (
         <>
+          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              { label: t('teacher.reportSessions'), value: reportableSessions.length, tone: 'text-indigo-700 bg-indigo-50' },
+              { label: t('teacher.averageAttendance'), value: `${attendanceRate}%`, tone: 'text-emerald-700 bg-emerald-50' },
+              { label: t('teacher.totalAbsences'), value: studentRows.reduce((total, student) => total + student.summary.absent, 0), tone: 'text-rose-700 bg-rose-50' },
+              { label: t('teacher.missingAttendanceSessions'), value: missingSessions.length, tone: 'text-amber-700 bg-amber-50' },
+            ].map((item) => (
+              <article key={item.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+                <p className="text-xs font-semibold text-slate-500">{item.label}</p>
+                <p className="mt-3 flex items-center justify-between text-2xl font-extrabold text-slate-900">
+                  {item.value}
+                  <span className={`rounded-xl px-2.5 py-2 text-xs ${item.tone}`}>{t('teacher.inSelectedPeriod')}</span>
+                </p>
+              </article>
+            ))}
+          </section>
+
           <section className="grid gap-4 lg:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-white p-5">
               <h2 className="mb-3 flex items-center gap-2 font-bold text-slate-800">

@@ -56,6 +56,28 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   return <>{children}</>;
 };
 
+const SessionsEntry: React.FC = () => {
+  const { hasRole } = useAuth();
+  return hasRole('teacher')
+    ? <Navigate to="/my-schedule" replace />
+    : (
+      <ProtectedRoute allowedRoles={['owner', 'manager', 'admin']}>
+        <SessionsPage />
+      </ProtectedRoute>
+    );
+};
+
+const AttendanceEntry: React.FC = () => {
+  const { hasRole } = useAuth();
+  return hasRole('teacher')
+    ? <Navigate to="/my-schedule" replace />
+    : (
+      <ProtectedRoute allowedRoles={['owner', 'manager', 'admin']}>
+        <AttendancePage />
+      </ProtectedRoute>
+    );
+};
+
 export const App: React.FC = () => {
   return (
     <Routes>
@@ -181,20 +203,12 @@ export const App: React.FC = () => {
 
         <Route
           path="sessions"
-          element={
-            <ProtectedRoute allowedRoles={['owner', 'manager', 'admin', 'teacher']}>
-              <SessionsPage />
-            </ProtectedRoute>
-          }
+          element={<SessionsEntry />}
         />
 
         <Route
           path="attendance"
-          element={
-            <ProtectedRoute allowedRoles={['owner', 'manager', 'admin', 'teacher']}>
-              <AttendancePage />
-            </ProtectedRoute>
-          }
+          element={<AttendanceEntry />}
         />
 
         <Route
