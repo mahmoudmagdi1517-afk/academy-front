@@ -57,6 +57,8 @@ export const SubscriptionsPage: React.FC = () => {
   const [renewalOfId, setRenewalOfId] = useState("");
   const [isRenewal, setIsRenewal] = useState(false);
   const [showFinishedOnly, setShowFinishedOnly] = useState(false);
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "unpaid" | "paid">("all");
+  const [courseFilter, setCourseFilter] = useState<"all" | "in_progress" | "finished">("all");
   const [customPriceQar, setCustomPriceQar] = useState("");
   const [initialPaymentQar, setInitialPaymentQar] = useState("0");
   const [initialPaymentMethod, setInitialPaymentMethod] = useState("cash");
@@ -389,9 +391,17 @@ export const SubscriptionsPage: React.FC = () => {
   const finishedStudentCount = new Set(
     finishedSubscriptions.map((subscription) => subscription.studentId),
   ).size;
-  const visibleSubscriptions = showFinishedOnly
-    ? finishedSubscriptions
-    : subscriptions;
+  const visibleSubscriptions = subscriptions.filter((subscription) => {
+    const courseFinished = subscription.lessonsRemaining === 0;
+    const hasBalance = subscription.remainingAmount > 0;
+
+    if (showFinishedOnly && !finishedSubscriptions.includes(subscription)) return false;
+    if (paymentFilter === "unpaid" && !hasBalance) return false;
+    if (paymentFilter === "paid" && hasBalance) return false;
+    if (courseFilter === "in_progress" && courseFinished) return false;
+    if (courseFilter === "finished" && !courseFinished) return false;
+    return true;
+  });
 
   return (
     <div className="space-y-6">
@@ -436,6 +446,41 @@ export const SubscriptionsPage: React.FC = () => {
         </div>
       )}
 
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs sm:flex-row sm:items-center">
+        <span className="text-xs font-bold text-slate-600">{t("common.filter")}:</span>
+        <SearchableSelect
+          value={paymentFilter}
+          onChange={(value) => setPaymentFilter(value as typeof paymentFilter)}
+          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs outline-hidden sm:w-48"
+        >
+          <option value="all">{t("sub.allPaymentStatuses")}</option>
+          <option value="unpaid">{t("sub.paymentUnpaid")}</option>
+          <option value="paid">{t("sub.paymentPaid")}</option>
+        </SearchableSelect>
+        <SearchableSelect
+          value={courseFilter}
+          onChange={(value) => setCourseFilter(value as typeof courseFilter)}
+          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs outline-hidden sm:w-48"
+        >
+          <option value="all">{t("sub.allCourseStatuses")}</option>
+          <option value="in_progress">{t("sub.courseActive")}</option>
+          <option value="finished">{t("sub.courseFinished")}</option>
+        </SearchableSelect>
+        {(paymentFilter !== "all" || courseFilter !== "all" || showFinishedOnly) && (
+          <button
+            type="button"
+            onClick={() => {
+              setPaymentFilter("all");
+              setCourseFilter("all");
+              setShowFinishedOnly(false);
+            }}
+            className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+          >
+            {t("sub.clearFilters")}
+          </button>
+        )}
+      </div>
+
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         {loading ? (
           <div className="py-20 text-center text-xs text-slate-400 font-medium">
@@ -443,18 +488,22 @@ export const SubscriptionsPage: React.FC = () => {
           </div>
         ) : visibleSubscriptions.length === 0 ? (
           <EmptyState
-            title={showFinishedOnly ? "No finished subscriptions" : "No enrollments recorded"}
+            title={subscriptions.length === 0 ? "No enrollments recorded" : "No matching subscriptions"}
             description={
-              showFinishedOnly
-                ? "There are no course-finished subscriptions to show."
-                : "Enroll students into course groups with scheduled installments."
+              subscriptions.length === 0
+                ? "Enroll students into course groups with scheduled installments."
+                : "Try changing or clearing the selected filters."
             }
             icon={FileCheck}
-            actionText={showFinishedOnly ? t("sub.viewAll") : "New Enrollment"}
+            actionText={subscriptions.length === 0 ? "New Enrollment" : t("sub.clearFilters")}
             onAction={() =>
-              showFinishedOnly
-                ? setShowFinishedOnly(false)
-                : openSubscriptionModal()
+              subscriptions.length === 0
+                ? openSubscriptionModal()
+                : (() => {
+                    setPaymentFilter("all");
+                    setCourseFilter("all");
+                    setShowFinishedOnly(false);
+                  })()
             }
           />
         ) : (

@@ -1,5 +1,5 @@
 import { api } from './client';
-import { Course, Group, GroupSchedule, Student, Subscription, TeacherRoster } from '../types/academic';
+import { Course, Group, GroupRoster, GroupSchedule, Student, Subscription, TeacherRoster } from '../types/academic';
 
 export const academicApi = {
   listTeacherRoster: () =>
@@ -52,6 +52,9 @@ export const academicApi = {
   // Groups
   listGroups: (params?: { courseId?: string }) =>
     api.get<Group[]>('/api/groups', params),
+
+  getGroupRoster: (id: string) =>
+    api.get<GroupRoster>(`/api/groups/${id}/roster`),
 
   createGroup: (data: {
     courseId: string;

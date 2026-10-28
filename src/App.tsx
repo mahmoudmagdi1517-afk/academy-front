@@ -8,6 +8,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { StudentsPage } from './pages/StudentsPage';
 import { TeacherStudentsPage } from './pages/TeacherStudentsPage';
 import { CoursesPage } from './pages/CoursesPage';
+import { GroupDetailsPage } from './pages/GroupDetailsPage';
 import { SubscriptionsPage } from './pages/SubscriptionsPage';
 import { PaymentsPage } from './pages/PaymentsPage';
 import { ExpensesPage } from './pages/ExpensesPage';
@@ -89,6 +90,15 @@ export const App: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={['owner', 'manager', 'admin']}>
               <CoursesPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="groups/:groupId"
+          element={
+            <ProtectedRoute allowedRoles={['owner', 'manager', 'admin']}>
+              <GroupDetailsPage />
             </ProtectedRoute>
           }
         />

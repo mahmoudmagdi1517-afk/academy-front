@@ -41,6 +41,17 @@ export interface Group {
   updatedAt: string;
 }
 
+export interface GroupRoster {
+  group: Group;
+  students: Array<{
+    subscriptionId: string;
+    status: 'active' | 'completed';
+    lessonsPurchased: number | null;
+    lessonsRemaining: number | null;
+    student: Pick<Student, '_id' | 'studentCode' | 'name' | 'nameAr' | 'phone' | 'email'>;
+  }>;
+}
+
 export interface GroupSchedule {
   _id?: string;
   dayOfWeek: number;

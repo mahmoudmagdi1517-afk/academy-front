@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BookOpen, Users, Plus, Calendar, Clock, DollarSign, Pencil, Trash2 } from 'lucide-react';
 import { Course, Group, GroupSchedule } from '../types/academic';
 import { Employee } from '../types/hr';
@@ -461,6 +462,13 @@ export const CoursesPage: React.FC = () => {
                       </span>
                     </div>
                     <div className="mt-3 flex gap-2">
+                      <Link
+                        to={`/groups/${group._id}`}
+                        className="inline-flex flex-1 items-center justify-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-xl font-semibold hover:bg-indigo-100"
+                      >
+                        <Users className="w-3.5 h-3.5" />
+                        {t('group.viewStudents')}
+                      </Link>
                       <button
                         type="button"
                         onClick={() => openGroupModal(group)}
