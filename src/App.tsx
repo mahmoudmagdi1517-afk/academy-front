@@ -7,6 +7,10 @@ import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { StudentsPage } from './pages/StudentsPage';
 import { TeacherStudentsPage } from './pages/TeacherStudentsPage';
+import { TeacherGroupsPage } from './pages/TeacherGroupsPage';
+import { TeacherGroupDetailsPage } from './pages/TeacherGroupDetailsPage';
+import { TeacherSchedulePage } from './pages/TeacherSchedulePage';
+import { AttendanceReportsPage } from './pages/AttendanceReportsPage';
 import { CoursesPage } from './pages/CoursesPage';
 import { GroupDetailsPage } from './pages/GroupDetailsPage';
 import { SubscriptionsPage } from './pages/SubscriptionsPage';
@@ -72,6 +76,42 @@ export const App: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={['teacher']}>
               <TeacherStudentsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="my-groups"
+          element={
+            <ProtectedRoute allowedRoles={['teacher']}>
+              <TeacherGroupsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="my-groups/:groupId"
+          element={
+            <ProtectedRoute allowedRoles={['teacher']}>
+              <TeacherGroupDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="my-schedule"
+          element={
+            <ProtectedRoute allowedRoles={['teacher']}>
+              <TeacherSchedulePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="attendance-reports"
+          element={
+            <ProtectedRoute allowedRoles={['teacher']}>
+              <AttendanceReportsPage />
             </ProtectedRoute>
           }
         />

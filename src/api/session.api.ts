@@ -1,5 +1,5 @@
 import { api } from './client';
-import { MakeupSession, Session, SessionDetail, AttendanceRecord, TeacherDashboard } from '../types/session';
+import { MakeupSession, Session, SessionDetail, AttendanceRecord, TeacherDashboard, TeacherReport } from '../types/session';
 
 export const sessionApi = {
   listSessions: (params?: { groupId?: string; currentDate?: string; fromDate?: string; status?: string }) =>
@@ -7,6 +7,13 @@ export const sessionApi = {
 
   getTeacherDashboard: (currentDate: string) =>
     api.get<TeacherDashboard>('/api/sessions/teacher-dashboard', { currentDate }),
+
+  getTeacherReport: (params?: {
+    fromDate?: string;
+    toDate?: string;
+    groupId?: string;
+    studentId?: string;
+  }) => api.get<TeacherReport>('/api/sessions/teacher-report', params),
 
   getSession: (id: string) =>
     api.get<SessionDetail>(`/api/sessions/${id}`),

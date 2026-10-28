@@ -15,6 +15,7 @@ import {
   UserCog,
   LogOut,
   Sparkles,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -54,6 +55,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       to: '/my-students',
       labelKey: 'nav.myStudents',
       icon: GraduationCap,
+      roles: ['teacher'],
+    },
+    {
+      to: '/my-groups',
+      labelKey: 'nav.myGroups',
+      icon: BookOpen,
+      roles: ['teacher'],
+    },
+    {
+      to: '/my-schedule',
+      labelKey: 'nav.mySchedule',
+      icon: CalendarDays,
+      roles: ['teacher'],
+    },
+    {
+      to: '/attendance',
+      labelKey: 'nav.attendance',
+      icon: ClipboardCheck,
+      roles: ['teacher'],
+    },
+    {
+      to: '/attendance-reports',
+      labelKey: 'nav.attendanceReports',
+      icon: FileCheck,
       roles: ['teacher'],
     },
     {

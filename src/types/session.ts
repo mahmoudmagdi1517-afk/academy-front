@@ -61,6 +61,56 @@ export interface TeacherDashboard {
   }>;
 }
 
+export interface TeacherReport {
+  groups: Array<{
+    _id: string;
+    name: string;
+    nameAr?: string | null;
+    courseId: string;
+    schedules: Array<{
+      _id?: string;
+      dayOfWeek: number;
+      startTime: string;
+      endTime: string;
+    }>;
+    course: {
+      _id: string;
+      name: string;
+      nameAr?: string | null;
+    } | null;
+  }>;
+  sessions: Array<Session & {
+    groupName: string;
+    groupNameAr?: string | null;
+    course: {
+      _id: string;
+      name: string;
+      nameAr?: string | null;
+    } | null;
+    students: Array<{
+      _id: string;
+      studentCode: string;
+      name: string;
+      nameAr?: string | null;
+    }>;
+    attendance: Array<{
+      _id: string;
+      sessionId: string;
+      studentId: string;
+      status: AttendanceStatus;
+      markedBy: string;
+      createdAt: string;
+      updatedAt: string;
+      audit: Array<{
+        at: string;
+        actorId: string;
+        fromStatus: string | null;
+        toStatus: AttendanceStatus;
+      }>;
+    }>;
+  }>;
+}
+
 export interface MakeupSession {
   _id: string;
   studentId: string;

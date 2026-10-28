@@ -103,6 +103,8 @@ export interface TeacherRoster {
     nameAr?: string | null;
     courseId: string;
     sessionCount: number;
+    schedules: GroupSchedule[];
+    course: Pick<Course, '_id' | 'name' | 'nameAr'> | null;
     students: Array<{
       subscriptionId: string;
       student: Pick<Student, '_id' | 'studentCode' | 'name' | 'nameAr'>;

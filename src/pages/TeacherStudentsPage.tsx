@@ -1,19 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowRightLeft, Users } from 'lucide-react';
+import { ArrowRightLeft, Search, Users } from 'lucide-react';
 import { academicApi } from '../api/academic.api';
+import { sessionApi } from '../api/session.api';
 import { TeacherRoster } from '../types/academic';
+import { TeacherReport } from '../types/session';
 import { EmptyState } from '../components/common/EmptyState';
 import { Modal } from '../components/common/Modal';
 import { SearchableSelect } from '../components/common/SearchableSelect';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
+import { getQatarToday } from '../utils/date';
+import { getStudentAttendanceSummary } from '../utils/teacher';
 
 type RosterGroup = TeacherRoster['groups'][number];
 type RosterStudent = RosterGroup['students'][number];
 
 export const TeacherStudentsPage: React.FC = () => {
   const { success, error } = useToast();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [groups, setGroups] = useState<RosterGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [transferTarget, setTransferTarget] = useState<{
@@ -22,12 +26,18 @@ export const TeacherStudentsPage: React.FC = () => {
   } | null>(null);
   const [newGroupId, setNewGroupId] = useState('');
   const [transferring, setTransferring] = useState(false);
+  const [search, setSearch] = useState('');
+  const [reportSessions, setReportSessions] = useState<TeacherReport['sessions']>([]);
 
   const loadRoster = async () => {
     setLoading(true);
     try {
-      const data = await academicApi.listTeacherRoster();
+      const [data, report] = await Promise.all([
+        academicApi.listTeacherRoster(),
+        sessionApi.getTeacherReport({ fromDate: '2000-01-01', toDate: getQatarToday() }),
+      ]);
       setGroups(data.groups);
+      setReportSessions(report.sessions);
     } catch (err: any) {
       error(err.message || 'Failed to load your students');
     } finally {
@@ -70,6 +80,16 @@ export const TeacherStudentsPage: React.FC = () => {
         </p>
       </div>
 
+      <label className="relative block max-w-lg">
+        <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder={t('teacher.searchStudents')}
+          className="w-full rounded-xl border border-slate-200 bg-white py-3 ps-10 pe-4 text-sm outline-hidden focus:border-indigo-400"
+        />
+      </label>
+
       {loading ? (
         <div className="py-12 text-center text-sm text-slate-500">{t('teacher.loading')}</div>
       ) : groups.length === 0 ? (
@@ -82,21 +102,42 @@ export const TeacherStudentsPage: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-5">
-          {groups.map((group) => (
+          {groups.map((group) => {
+            const students = group.students.filter(({ student }) => {
+              const term = search.trim().toLocaleLowerCase();
+              return !term ||
+                student.name.toLocaleLowerCase().includes(term) ||
+                (student.nameAr || '').includes(search.trim()) ||
+                student.studentCode.toLocaleLowerCase().includes(term);
+            });
+            if (students.length === 0) return null;
+            return (
             <section key={group._id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                 <div>
                   <h3 className="font-bold text-slate-900">{group.name}</h3>
+                  <p className="mt-0.5 text-xs text-indigo-700">
+                    {language === 'ar' ? group.course?.nameAr || group.course?.name : group.course?.name}
+                  </p>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    {group.students.length} {t('teacher.studentsWithLessons')}
+                    {students.length} {t('teacher.studentsWithLessons')}
                   </p>
                 </div>
               </div>
-              {group.students.length === 0 ? (
+              {students.length === 0 ? (
                 <p className="px-5 py-6 text-sm text-slate-400">{t('teacher.noStudentsWithLessons')}</p>
               ) : (
                 <div className="divide-y divide-slate-100">
-                  {group.students.map((enrollment) => (
+                  {students.map((enrollment) => {
+                    const summary = getStudentAttendanceSummary(reportSessions, enrollment.student._id);
+                    const history = reportSessions
+                      .filter((session) => session.students.some((student) => student._id === enrollment.student._id))
+                      .flatMap((session) => {
+                        const record = session.attendance.find((item) => item.studentId === enrollment.student._id);
+                        return record ? [{ session, record }] : [];
+                      })
+                      .sort((left, right) => right.session.currentDate.localeCompare(left.session.currentDate));
+                    return (
                     <div
                       key={enrollment.subscriptionId}
                       className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4"
@@ -108,13 +149,30 @@ export const TeacherStudentsPage: React.FC = () => {
                         <div className="text-[11px] font-mono text-indigo-600 mt-0.5">
                           {enrollment.student.studentCode}
                         </div>
+                        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                          <span>{t('teacher.attendanceRate')}: {summary.attendanceRate}%</span>
+                          <span>{t('teacher.absences')}: {summary.absent}</span>
+                          <span>{t('teacher.lateCount')}: {summary.late}</span>
+                        </div>
+                        <details className="mt-2">
+                          <summary className="cursor-pointer text-xs font-semibold text-indigo-700">
+                            {t('teacher.viewAttendanceHistory')}
+                          </summary>
+                          <ul className="mt-2 space-y-1 text-xs text-slate-600">
+                            {history.length ? history.map(({ session, record }) => (
+                              <li key={record._id}>
+                                {session.currentDate} · {t(`session.${record.status}`)}
+                              </li>
+                            )) : <li>{t('teacher.noAttendanceHistory')}</li>}
+                          </ul>
+                        </details>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-xs text-slate-600">
                           <span className="font-bold text-indigo-600">{enrollment.lessonsRemaining}</span>
                           {' '}of {enrollment.lessonsPurchased} {t('teacher.lessonsRemaining')}
                         </div>
-                        {groups.some((candidate) =>
+                        {enrollment.lessonsRemaining > 0 && groups.some((candidate) =>
                           candidate.courseId === group.courseId && candidate._id !== group._id
                         ) && (
                           <button
@@ -130,11 +188,13 @@ export const TeacherStudentsPage: React.FC = () => {
                         )}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </section>
-          ))}
+            );
+          })}
         </div>
       )}
 

@@ -29,7 +29,8 @@ import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { NotificationItem } from '../types/hr';
-import { TeacherDashboard } from '../types/session';
+import { TeacherDashboard, TeacherReport } from '../types/session';
+import { addDays, formatTime } from '../utils/teacher';
 
 export const DashboardPage: React.FC = () => {
   const { t, language } = useLanguage();
@@ -54,6 +55,7 @@ export const DashboardPage: React.FC = () => {
   });
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [teacherDashboard, setTeacherDashboard] = useState<TeacherDashboard | null>(null);
+  const [teacherUpcoming, setTeacherUpcoming] = useState<TeacherReport['sessions']>([]);
 
   const fetchDashboardData = async () => {
     try {
@@ -61,8 +63,12 @@ export const DashboardPage: React.FC = () => {
       const today = getQatarToday();
 
       if (isTeacher) {
-        const data = await sessionApi.getTeacherDashboard(today);
+        const [data, report] = await Promise.all([
+          sessionApi.getTeacherDashboard(today),
+          sessionApi.getTeacherReport({ fromDate: today, toDate: addDays(today, 7) }),
+        ]);
         setTeacherDashboard(data);
+        setTeacherUpcoming(report.sessions);
         setStats({
           studentsCount: new Set(data.groups.flatMap((group) => group.students.map((student) => student._id))).size,
           coursesCount: 0,
@@ -195,10 +201,34 @@ export const DashboardPage: React.FC = () => {
           <p className="text-slate-300 text-sm mt-1">{t('dashboard.teacherSubtitle')}</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
           <StatCard title={t('dashboard.groupsCount')} value={loading ? '...' : stats.groupsCount} icon={BookOpen} color="indigo" subtitle={t('dashboard.teacherGroups')} />
           <StatCard title={t('dashboard.teacherStudents')} value={loading ? '...' : stats.studentsCount} icon={GraduationCap} color="sky" subtitle={t('dashboard.teacherEnrolled')} />
           <StatCard title={t('dashboard.todaySessions')} value={loading ? '...' : stats.todaySessionsCount} icon={Calendar} color="amber" subtitle={t('dashboard.teacherAttendance')} />
+          <StatCard
+            title={t('teacher.missingAttendanceSessions')}
+            value={loading ? '...' : dashboard?.sessions.filter((session) => {
+              const group = dashboard.groups.find((item) => item._id === session.groupId);
+              return group?.students.some((student) =>
+                !session.attendance.some((record) => record.studentId === student._id)
+              ) || false;
+            }).length || 0}
+            icon={AlertTriangle}
+            color="rose"
+            subtitle={t('teacher.today')}
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <Link to="/my-groups" className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700">
+            <BookOpen className="h-4 w-4" /> {t('teacher.openGroups')}
+          </Link>
+          <Link to="/attendance" className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-700">
+            <UserCheck className="h-4 w-4" /> {t('teacher.openAttendance')}
+          </Link>
+          <Link to="/my-schedule" className="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2.5 text-xs font-bold text-white hover:bg-slate-700">
+            <Calendar className="h-4 w-4" /> {t('nav.mySchedule')}
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -253,6 +283,14 @@ export const DashboardPage: React.FC = () => {
                       <p className="mt-2 text-[11px] text-slate-500">
                         {t('dashboard.teacherAttendanceSummary')}: {t('session.present')} {counts.present || 0} · {t('session.absent')} {counts.absent || 0} · {t('session.late')} {counts.late || 0}
                       </p>
+                      <p className="mt-1 text-[11px] text-slate-500">
+                        {formatTime(session.scheduledStartAt, language)}–{formatTime(session.scheduledEndAt, language)}
+                      </p>
+                      {group?.students.some((student) =>
+                        !session.attendance.some((record) => record.studentId === student._id)
+                      ) && (
+                        <p className="mt-2 text-[11px] font-bold text-amber-700">{t('teacher.attendanceMissing')}</p>
+                      )}
                       {session.status !== 'cancelled' && (
                         <Link
                           to={`/attendance/${encodeURIComponent(session._id)}`}
@@ -269,6 +307,29 @@ export const DashboardPage: React.FC = () => {
             )}
           </section>
         </div>
+
+        <section className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h3 className="text-base font-bold text-slate-800">{t('teacher.upcomingSchedule')}</h3>
+            <Link to="/my-schedule" className="text-xs font-bold text-indigo-600 hover:text-indigo-800">{t('teacher.viewSchedule')}</Link>
+          </div>
+          {teacherUpcoming.filter((session) => session.currentDate > getQatarToday()).length === 0 ? (
+            <p className="py-4 text-center text-sm text-slate-400">{t('teacher.noUpcomingSessions')}</p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {teacherUpcoming.filter((session) => session.currentDate > getQatarToday()).slice(0, 6).map((session) => (
+                <Link
+                  key={session._id}
+                  to={`/attendance/${encodeURIComponent(session._id)}`}
+                  className="rounded-2xl border border-slate-100 p-4 transition hover:border-indigo-200 hover:bg-indigo-50/40"
+                >
+                  <p className="font-bold text-slate-800">{language === 'ar' ? session.groupNameAr || session.groupName : session.groupName}</p>
+                  <p className="mt-1 text-xs text-slate-500">{formatDateTime(session.scheduledStartAt)}</p>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     );
   }
