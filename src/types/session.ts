@@ -72,6 +72,9 @@ export interface TeacherReport {
       dayOfWeek: number;
       startTime: string;
       endTime: string;
+      teacherEmployeeId?: string | null;
+      teacherName?: string | null;
+      teacherNameAr?: string | null;
     }>;
     course: {
       _id: string;

@@ -69,6 +69,9 @@ export const TeacherGroupsPage: React.FC = () => {
                         className="rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs text-slate-600"
                       >
                         {t(`day.${dayKeys[slot.dayOfWeek]}`)} · {slot.startTime}–{slot.endTime}
+                        {slot.teacherName
+                          ? ` · ${language === 'ar' ? slot.teacherNameAr || slot.teacherName : slot.teacherName}`
+                          : ''}
                       </li>
                     ))}
                   </ul>

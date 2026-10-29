@@ -18,6 +18,7 @@ interface SearchableSelectProps {
   required?: boolean;
   disabled?: boolean;
   name?: string;
+  "aria-label"?: string;
 }
 
 interface SelectOption {
@@ -74,6 +75,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   required = false,
   disabled = false,
   name,
+  "aria-label": ariaLabel,
 }) => {
   const { t } = useLanguage();
   const id = useId();
@@ -206,6 +208,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        aria-label={ariaLabel}
         aria-required={required || undefined}
         aria-controls={`searchable-select-${id}`}
         onClick={() => {

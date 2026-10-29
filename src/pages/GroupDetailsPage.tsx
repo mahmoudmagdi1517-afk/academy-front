@@ -14,7 +14,7 @@ type GroupRosterStudent = GroupRoster['students'][number];
 
 export const GroupDetailsPage: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { error } = useToast();
   const [roster, setRoster] = useState<GroupRoster | null>(null);
   const [loading, setLoading] = useState(true);
@@ -151,6 +151,9 @@ export const GroupDetailsPage: React.FC = () => {
                     <span key={slot._id || `${slot.dayOfWeek}-${slot.startTime}`}>
                       {t(`day.${['', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][slot.dayOfWeek]}`)}
                       {' · '}{slot.startTime}–{slot.endTime}
+                      {slot.teacherName
+                        ? ` · ${language === 'ar' ? slot.teacherNameAr || slot.teacherName : slot.teacherName}`
+                        : ''}
                     </span>
                   ))}
                 </div>

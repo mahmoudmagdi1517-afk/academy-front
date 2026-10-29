@@ -15,7 +15,7 @@ import { formatQAR, qarToFils, filsToQar } from '../utils/currency';
 import { getQatarToday, formatDate } from '../utils/date';
 
 export const CoursesPage: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { success, error } = useToast();
 
   const [activeTab, setActiveTab] = useState<'courses' | 'groups'>('courses');
@@ -110,11 +110,18 @@ export const CoursesPage: React.FC = () => {
             teacherEmployeeId: group.teacherEmployeeId || '',
             startDate: group.startDate || getQatarToday(),
             sessionCount: String(group.sessionCount || 12),
-            schedules: (group.schedules || []).map(({ _id, dayOfWeek, startTime, endTime }) => ({
+            schedules: (group.schedules || []).map(({
               _id,
               dayOfWeek,
               startTime,
               endTime,
+              teacherEmployeeId,
+            }) => ({
+              _id,
+              dayOfWeek,
+              startTime,
+              endTime,
+              teacherEmployeeId: teacherEmployeeId || '',
             })),
           }
         : emptyGroupForm()
@@ -201,7 +208,10 @@ export const CoursesPage: React.FC = () => {
         teacherEmployeeId: groupForm.teacherEmployeeId || null,
         startDate: groupForm.startDate,
         sessionCount: Number(groupForm.sessionCount),
-        schedules: groupForm.schedules,
+        schedules: groupForm.schedules.map((slot) => ({
+          ...slot,
+          teacherEmployeeId: slot.teacherEmployeeId || null,
+        })),
       };
       if (editingGroup) {
         await academicApi.updateGroup(editingGroup._id, { ...payload, name: groupForm.name.trim() });
@@ -443,6 +453,9 @@ export const CoursesPage: React.FC = () => {
                             {group.schedules.map((slot) => (
                               <li key={slot._id || `${slot.dayOfWeek}-${slot.startTime}`}>
                                 {weekdays[slot.dayOfWeek - 1]} · {slot.startTime}–{slot.endTime}
+                                {slot.teacherName
+                                  ? ` · ${language === 'ar' ? slot.teacherNameAr || slot.teacherName : slot.teacherName}`
+                                  : ''}
                               </li>
                             ))}
                           </ul>
@@ -731,7 +744,7 @@ export const CoursesPage: React.FC = () => {
               </button>
             </div>
             {groupForm.schedules.map((slot, index) => (
-              <div key={index} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 mt-2">
+              <div key={index} className="grid grid-cols-2 sm:grid-cols-[1fr_1fr_1fr_1.2fr_auto] gap-2 mt-2">
                 <select
                   required
                   value={slot.dayOfWeek}
@@ -775,6 +788,23 @@ export const CoursesPage: React.FC = () => {
                   <option value="">{t('group.endTime')}</option>
                   {timeOptions.map((time) => <option key={time} value={time}>{time}</option>)}
                 </select>
+                <SearchableSelect
+                  value={slot.teacherEmployeeId || ''}
+                  aria-label={t('group.scheduleTeacher')}
+                  onChange={(value) => {
+                    const schedules = [...groupForm.schedules];
+                    schedules[index] = { ...slot, teacherEmployeeId: value };
+                    setGroupForm({ ...groupForm, schedules });
+                  }}
+                  className="min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl"
+                >
+                  <option value="">{t('group.teacherDefault')}</option>
+                  {teachers.map((teach) => (
+                    <option key={teach._id} value={teach._id}>
+                      {teach.name} {teach.nameAr ? `(${teach.nameAr})` : ''}
+                    </option>
+                  ))}
+                </SearchableSelect>
                 <button
                   type="button"
                   aria-label={t('group.removeSchedule')}

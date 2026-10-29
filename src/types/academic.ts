@@ -57,6 +57,9 @@ export interface GroupSchedule {
   dayOfWeek: number;
   startTime: string;
   endTime: string;
+  teacherEmployeeId?: string | null;
+  teacherName?: string | null;
+  teacherNameAr?: string | null;
 }
 
 export type InstallmentStatus = 'pending' | 'partial' | 'paid' | 'overdue';
